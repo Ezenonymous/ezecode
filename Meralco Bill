@@ -1,0 +1,149 @@
+import java.util.Scanner;
+
+public class MeralcoBillGenerator {
+    private Scanner scanner;
+    private static final double TRANSMISSION_RATE = 0.101;
+    private static final double DISTRIBUTION_RATE = 0.175;
+    private static final double GENERATION_RATE = 0.55;
+    private static final double TAX_RATE = 0.117;
+    private static final double OTHER_CHARGES = 50.0;
+    private static final double RATE_PER_KWH = 10.5;
+
+    public MeralcoBillGenerator() {
+        scanner = new Scanner(System.in);
+    }
+
+    public void generateBill() {
+        char tryAgain = 'Y';
+
+        while (tryAgain == 'Y' || tryAgain == 'y') {
+            int accountNumber = getValidAccountNumber();
+            String[] normalizedInfo = getNormalizedInfo();
+            int[] billingInfo = getBillingInfo();
+            double previousKwh = getPreviousKwh();
+            double presentKwh = getPresentKwh();
+            double kwhUsage = presentKwh - previousKwh;
+            double billAmount = calculateBillAmount(kwhUsage);
+
+            displayBill(accountNumber, normalizedInfo, billingInfo, previousKwh, presentKwh, kwhUsage, billAmount);
+
+            System.out.print("\nDo you want to try again? [Y/N]: ");
+            tryAgain = scanner.next().charAt(0);
+        }
+        System.out.println("Thank you for using the Meralco Bill Generator.");
+        scanner.close();
+    }
+
+    private int getValidAccountNumber() {
+        int accountNumber;
+        do {
+            System.out.print("Enter Account Number (6 digits): ");
+            accountNumber = scanner.nextInt();
+        } while (accountNumber < 100000 || accountNumber > 999999);
+        return accountNumber;
+    }
+
+    private String[] getNormalizedInfo() {
+        System.out.print("Enter First Name: ");
+        String firstName = scanner.next();
+        System.out.print("Enter Last Name: ");
+        String lastName = scanner.next();
+        return new String[]{firstName, lastName};
+    }
+
+    private int[] getBillingInfo() {
+        int[] billingInfo = new int[3];
+        System.out.print("Enter Billing Year (4 digits): ");
+        billingInfo[0] = scanner.nextInt();
+        System.out.print("Enter Billing Month (2 digits): ");
+        billingInfo[1] = scanner.nextInt();
+        System.out.print("Enter Billing Day (2 digits): ");
+        billingInfo[2] = scanner.nextInt();
+        return billingInfo;
+    }
+
+    private double getPreviousKwh() {
+        System.out.print("Enter Previous kWh Reading: ");
+        return scanner.nextDouble();
+    }
+
+    private double getPresentKwh() {
+        System.out.print("Enter Present kWh Reading: ");
+        return scanner.nextDouble();
+    }
+
+    private double calculateBillAmount(double kwhUsage) {
+        double transmissionCharge = getTransmissionCharge(kwhUsage);
+        double distributionCharge = getDistributionCharge(kwhUsage);
+        double generationCharge = getGenerationCharge(kwhUsage);
+        double taxes = getTaxes(kwhUsage);
+        return kwhUsage * RATE_PER_KWH + transmissionCharge + distributionCharge + generationCharge + taxes + OTHER_CHARGES;
+    }
+
+    private double getTransmissionCharge(double kwhUsage) {
+        return kwhUsage * TRANSMISSION_RATE; 
+    }
+
+    private double getDistributionCharge(double kwhUsage) {
+        return kwhUsage * DISTRIBUTION_RATE;
+    }
+
+    private double getGenerationCharge(double kwhUsage) {
+        return kwhUsage * GENERATION_RATE;
+    }
+
+    private double getTaxes(double kwhUsage) {
+        return kwhUsage * TAX_RATE; 
+    }
+
+    private void displayBill(int accountNumber, String[] normalizedInfo, int[] billingInfo,
+                             double previousKwh, double presentKwh, double kwhUsage, double billAmount) {
+        System.out.println("\nMeralco Bill");
+        System.out.println("Service Information:");
+        System.out.println("Account Number: " + accountNumber);
+        System.out.println("Name: " + normalizedInfo[0] + " " + normalizedInfo[1]);
+        System.out.println("Billing Date: " + billingInfo[1] + "/" + billingInfo[2] + "/" + billingInfo[0]);
+        System.out.println("Previous kWh Reading: " + previousKwh);
+        System.out.println("Present kWh Reading: " + presentKwh);
+        System.out.println("Electricity Usage (kWh): " + kwhUsage);
+        System.out.printf("Transmission Charge: Php %.2f%n", getTransmissionCharge(kwhUsage));
+        System.out.printf("Distribution Charge: Php %.2f%n", getDistributionCharge(kwhUsage));
+        System.out.printf("Generation Charge: Php %.2f%n", getGenerationCharge(kwhUsage));
+        System.out.printf("Taxes: Php %.2f%n", getTaxes(kwhUsage));
+        System.out.printf("Other Charges: Php %.2f%n", OTHER_CHARGES);
+        System.out.printf("Total Bill Amount: Php %.2f%n", billAmount);
+        System.out.println("Due Date: " + getDueDate(billingInfo[0], billingInfo[1], billingInfo[2]));
+    }
+
+    private String getDueDate(int year, int month, int day) {
+        int daysToAdd = 9;
+        int[] daysInMonth = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+        if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+            daysInMonth[1] = 29;
+        }
+
+        day += daysToAdd;
+
+        while (day > daysInMonth[month - 1]) {
+            day -= daysInMonth[month - 1];
+            month++;
+            if (month > 12) {
+                month = 1;
+                year++;
+                if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+                    daysInMonth[1] = 29;
+                } else {
+                    daysInMonth[1] = 28;
+                }
+            }
+        }
+
+        return String.format("%02d/%02d/%02d", month, day, year);
+    }
+
+    public static void main(String[] args) {
+        MeralcoBillGenerator billGenerator = new MeralcoBillGenerator();
+        billGenerator.generateBill();
+    }
+}
